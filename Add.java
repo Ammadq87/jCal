@@ -4,6 +4,7 @@ public class Add {
     }
 
     public boolean execute() {
+        System.out.println("hi");
         return true;
     }
 }
