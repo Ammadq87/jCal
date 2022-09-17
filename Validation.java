@@ -5,7 +5,8 @@ public class Validation {
     private String commandType;
 
     public Validation(String command) {
-        this.command = command;
+        CommandUtil cu = new CommandUtil();
+        this.command = cu.SetCommand(command);
     }
 
     public boolean RunValidation() {
@@ -47,6 +48,8 @@ public class Validation {
             case "book":
             case "find":
             case "login":
+                Login login = new Login(this.command);
+                return true;
             case "ls":
         }
 
