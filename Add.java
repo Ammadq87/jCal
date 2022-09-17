@@ -1,10 +1,13 @@
-public class Add {
+public class Add extends DBAccess {
     public Add() {
 
     }
 
     public boolean execute() {
-        System.out.println("hi");
         return true;
+    }
+
+    private void CreatePrompt() {
+
     }
 }
