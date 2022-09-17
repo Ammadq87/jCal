@@ -21,7 +21,9 @@ public class Messages {
                 { "lblQueryFailed", "Failed to Execute Query:" + option },
                 { "lblCommandFailed", "Failed to Execute Command:" + option },
                 { "lblPrintResultsFailed", "Failed to Print Results:" + option },
-                { "lblDuplicateOrUnknownValue", "Duplucate or Unknown Value/Parameter Entered" },
+                { "lblDuplicateOrUnknownValue", "Duplicate or Unknown Value/Parameter Entered" },
+                { "lblLoginFailed", "Username or Password Incorrect" },
+                { "lblAccountExists", "This account already exists" },
                 { "lblCustom", option }
 
         };
@@ -47,6 +49,8 @@ public class Messages {
                 { "lblOptionList", "Select an option" },
                 { "lblExit", "Exited application" },
                 { "lblSuccessfulConnect", "Successfully Connected" },
+                { "lblLoginSuccessful", "Logged In as " + option + "!" },
+                { "lblAccountCreated", "Success: Account Created" },
                 { "lblCustom", option }
         };
 
