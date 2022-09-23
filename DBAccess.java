@@ -61,6 +61,7 @@ public class DBAccess {
             Statement s = connection.createStatement();
             s.executeUpdate(sql);
             this.loggedInUser.accountCreated = true;
+            msg.Print(msg.GetSuccessMessage("lblSuccess", null), 's');
         } catch (SQLIntegrityConstraintViolationException e) {
             try {
                 Statement s = connection.createStatement();
