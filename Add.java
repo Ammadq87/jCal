@@ -2,12 +2,20 @@ import java.rmi.server.ObjID;
 import java.util.*;
 
 public class Add extends DBAccess {
+    private int jCalID;
+
     public Add() {
-        CreatePrompt();
     }
 
     public boolean execute() {
+        this.jCalID = super.loggedInUser.getJCalID();
+        if (jCalID == -1) {
+            super.msg.Print(super.msg.GetErrorMessage("lblNotLoggedIn", null), 'e');
+            return false;
+        }
+        CreatePrompt();
         return true;
+
     }
 
     /*
@@ -34,14 +42,26 @@ public class Add extends DBAccess {
             if (key.equals("eventID-i"))
                 continue;
 
-            System.out.print("  " + columnName + ": ");
+            System.out.print("\t" + columnName + ": ");
 
+            Validation valid = new Validation(null);
             if (type == 'i') {
                 boolean mismatch = false;
                 while (!mismatch) {
                     try {
+                        // Verify start <= time and priority and status are 1 <= x <= 3
                         Integer value = input.nextInt();
                         input.nextLine();
+
+                        if (key.equals("endTime-i")) {
+                            while (!valid.validateTime((int) values.get(values.size() - 1), value)) {
+                                msg.Print("> Invalid Time. End Time should be greater than Start Time.", 'e');
+                                System.out.print("  endTime: ");
+                                value = input.nextInt();
+                                input.nextLine();
+                            }
+                        }
+
                         values.add(value);
                         mismatch = true;
                     } catch (InputMismatchException e) {
@@ -54,11 +74,29 @@ public class Add extends DBAccess {
                 String value = input.nextLine();
                 if (key.equals("name-s"))
                     eventName = value;
+                else if (key.equals("date-s")) {
+                    while (value == null || super.cu.isStringNullOrEmpty(value) || !valid.validateDateFormat(value)) {
+                        msg.Print("> Valid Date Not Provided. Retry? [Y/N]", 'o');
+                        System.out.print("  > ");
+                        String option = input.nextLine();
+                        if (super.cu.isStringNullOrEmpty(option) || option.charAt(0) == 'n'
+                                || option.charAt(0) == 'N') {
+                            value = super.cu.GetCurrentLogInTime();
+                            msg.Print("> Date replaced with Today's Date", 'o');
+                            break;
+                        } else {
+                            msg.Print("> Enter a valid date (mm-dd-yyyy):", 'o');
+                            System.out.print("  date: ");
+                            value = input.nextLine();
+                        }
+                    }
+                }
                 values.add(value);
             }
         }
 
         eventInfo.put(eventName, values);
+
         insertEvent(values);
     }
 
@@ -78,8 +116,8 @@ public class Add extends DBAccess {
             else
                 sql += obj + ",";
         }
-        int jCalID = super.loggedInUser.getJCalID();
-        sql += "0," + jCalID + ");";
+
+        sql += "0," + this.jCalID + ");";
         super.ExecuteQuery(sql, 0);
     }
 
