@@ -24,6 +24,12 @@ public class User {
         return this.userInfo;
     }
 
+    public int getUID() {
+        if (this.userInfo == null || this.userInfo.isEmpty())
+            return -1;
+        return (Integer) this.userInfo.get("uid-i");
+    }
+
     public int getJCalID() {
         if (this.userInfo == null || this.userInfo.isEmpty())
             return -1;
