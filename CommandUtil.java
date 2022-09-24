@@ -43,7 +43,7 @@ public class CommandUtil {
         return null;
     }
 
-    private boolean isStringNullOrEmpty(String s) {
+    public boolean isStringNullOrEmpty(String s) {
         return (s == null || s.isBlank() || s.isEmpty() || s.equals(" ") || s.equals(""));
     }
 
