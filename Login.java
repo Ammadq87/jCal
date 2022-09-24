@@ -45,7 +45,7 @@ public class Login extends DBAccess {
                 values += super.cu.GetCurrentLogInTime() + ",";
             } else {
                 String key = field.substring(0, field.indexOf('-'));
-                System.out.print("  " + key + ": ");
+                System.out.print("\t" + key + ": ");
                 values += "\'" + input.nextLine() + "\',";
             }
         }
@@ -62,6 +62,9 @@ public class Login extends DBAccess {
         if (userInfo == null || userInfo.size() != 1)
             return false;
         super.loggedInUser.SetInfoFromLogin(userInfo);
+        sql = "UPDATE users SET lastLoggedIn = \'" + super.cu.GetCurrentLogInTime() + "\' WHERE uid = "
+                + super.loggedInUser.getUID();
+        super.ExecuteQuery(sql, 0);
         return true;
     }
 }
