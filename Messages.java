@@ -24,6 +24,7 @@ public class Messages {
                 { "lblDuplicateOrUnknownValue", "Duplicate or Unknown Value/Parameter Entered" },
                 { "lblLoginFailed", "Username or Password Incorrect" },
                 { "lblAccountExists", "This account already exists" },
+                { "lblNotLoggedIn", "Cannot Access, Not Logged In!" },
                 { "lblCustom", option }
 
         };
