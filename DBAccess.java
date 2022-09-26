@@ -6,6 +6,8 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.*;
 
+import com.mysql.cj.x.protobuf.MysqlxNotice.Frame;
+
 public class DBAccess {
     private String user = "root";
     private String password = "Ammadq87";
@@ -89,6 +91,7 @@ public class DBAccess {
                 for (int j = 0; j < this.tables.length; j++) {
                     if (i != j && text[i].equals(this.tables[j][0])) {
                         primaryKey = this.tables[j][1];
+                        break;
                     }
                 }
             }
@@ -141,4 +144,55 @@ public class DBAccess {
 
         return results;
     }
+
+    /*
+     * Returns query results using columns and where statements
+     * 
+     * @param - columns - List<String> - contains what columns it will query from
+     * 
+     * @param - wheres - List<String> - contains what values will be needed to
+     * compare
+     * 
+     * @return - Map<Integer, List<Objects> - list will contain values from query
+     * 
+     * ex @param: columns:
+     * ["name-s", "date-s", "id-i"] - where character after '-' states the column
+     * type
+     * 
+     * ex @param: wheres:
+     * ["name = \'value\'", "id=0"]
+     */
+    public Map<Integer, List<Object>> test(List<String> columns, List<String> wheres, String table) {
+        String sql = "SELECT {0} FROM " + table + " {1};";
+        String firstClause = "*";
+        if (!(columns == null || columns.size() == 0)) {
+            firstClause = columns.toString().substring(1, columns.toString().length() - 1);
+        }
+
+        String secondClause = "";
+        if (!(wheres == null || wheres.size() == 0)) {
+            secondClause = wheres.toString().substring(1, wheres.toString().length() - 1);
+        }
+
+        sql = sql.replace("{0}", firstClause).replace("{1}", secondClause);
+        System.out.println(sql);
+
+        try {
+
+            Statement s = connection.createStatement();
+            ResultSet r = s.executeQuery(sql);
+
+            while (r.next()) {
+
+            }
+
+            // String[] a = (String[]) r.getArray("columnLabel").getArray();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+
+    }
+
 }
