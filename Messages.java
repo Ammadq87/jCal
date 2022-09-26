@@ -13,7 +13,8 @@ public class Messages {
         String labels[][] = {
                 { "lblCommandNotFound", "Command" + option + "Not Found" },
                 { "lblInvalidDate", "Invalid Date > " + option },
-                { "lblInvalidTime", "Invalid Time > " + option },
+                { "lblInvalidTime",
+                        "Invalid Time: Time Provided should be in 15-min intervals and StartTime <= EndTime" },
                 { "lblInvalidParameter", "Invalid Parameter" },
                 { "lblInvalidArgument", "Invalid Arguemnt" },
                 { "lblNonNumerical", "Non-numerical Value Provided" },
