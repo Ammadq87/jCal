@@ -1,6 +1,15 @@
+import java.util.*;
+
 public class Find extends DBAccess {
     private int jCalID;
     private String command;
+
+    /*
+     * event find -n 'event'
+     * event find -n 'event' --edit
+     * event find -n 'event' --delete
+     * 
+     */
 
     public Find(String command) {
         this.command = command;
@@ -27,8 +36,9 @@ public class Find extends DBAccess {
                 break;
             case "--edit":
                 editPrompt();
+                break;
             default:
-                findPrompt();
+                System.out.println(findPrompt());
         }
         return true;
     }
@@ -49,15 +59,69 @@ public class Find extends DBAccess {
      */
 
     public void deletePrompt() {
+        Map<Integer, Event> results = getMappingOfEvents(findEventQuery());
+        String options = showOptions(results);
+        if (!options.equals("No Results Found")) {
+            System.out.println(options);
+            msg.Print("> Select an Event to delete.", 'o');
+            System.out.print("> ");
+            boolean error = false;
+            while (!error) {
+                try {
 
+                    Scanner input = new Scanner(System.in);
+                    int opt = input.nextInt();
+
+                    Event toBeDeleted = results.get(opt);
+                    if (toBeDeleted != null) {
+                        String sql = "DELETE FROM events WHERE name =\"" + toBeDeleted.getName() + "\";";
+                        super.ExecuteQuery(sql, 0);
+                        error = true;
+                    } else {
+                        msg.Print("> Invalid Option: Could Not Delete", 'e');
+                        break;
+                    }
+                } catch (InputMismatchException e) {
+                    msg.Print(msg.GetErrorMessage("lblNonNumerical", null), 'e');
+                }
+            }
+
+        } else {
+            msg.Print("No Results Found", 'o');
+        }
     }
 
     public void editPrompt() {
 
     }
 
-    public void findPrompt() {
+    private Map<Integer, List<Object>> findEventQuery() {
+        String eventName = super.cu.GetArgument(this.command, "-n");
+        int jCalID = super.loggedInUser.getJCalID();
+        String sql = "SELECT * FROM events WHERE name REGEXP " + eventName + " AND jCal = " + jCalID;
+        return super.FetchResults(sql, super.cu.eventColumns);
+    }
 
+    public String findPrompt() {
+        return showOptions(getMappingOfEvents(findEventQuery()));
+    }
+
+    private Map<Integer, Event> getMappingOfEvents(Map<Integer, List<Object>> results) {
+        Map<Integer, Event> output = new HashMap<>();
+        for (Integer key : results.keySet()) {
+            output.put(key, new Event(results.get(key)));
+        }
+        return output;
+    }
+
+    private String showOptions(Map<Integer, Event> options) {
+        String output = "";
+        if (options == null || options.size() == 0)
+            return "No Results Found";
+        for (Integer key : options.keySet()) {
+            output += "[" + key + "] " + options.get(key).toString() + "\n";
+        }
+        return output.substring(0, output.length() - 1);
     }
 
 }
