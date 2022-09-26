@@ -78,9 +78,11 @@ public class Validation {
                 return obj.execute();
             case "book":
             case "find":
+                Find find = new Find(this.command);
+                return find.execute();
             case "login":
                 Login login = new Login(this.command);
-                return true;
+                return login.Execute();
             case "ls":
         }
 
