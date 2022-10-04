@@ -1,20 +1,12 @@
 import java.util.*;
 
-public class Add extends DBAccess {
-    private int jCalID;
+public class Add extends Validation {
 
-    /**
-     * Returns if adding an event was a successful operation. Checks for if user is
-     * logged in to execute
-     * 
-     * @return if method was successful
-     */
+    public Add(String command) {
+        super(command);
+    }
+
     public boolean execute() {
-        this.jCalID = super.loggedInUser.getJCalID();
-        if (jCalID == -1) {
-            super.msg.Print(super.msg.GetErrorMessage("lblNotLoggedIn", null), 'e');
-            return false;
-        }
         CreatePrompt();
         return true;
     }
@@ -27,8 +19,9 @@ public class Add extends DBAccess {
      * @return true/false if the event with that name exists
      */
     private boolean eventAlreadyExists(String eventName) {
+        DBAccess db = new DBAccess();
         String sql = "SELECT * FROM events WHERE name = \"" + eventName + "\";"; // Select COUNT(name)
-        Map<Integer, List<Object>> results = super.FetchResults(sql, super.cu.eventColumns);
+        Map<Integer, List<Object>> results = db.FetchResults(sql, super.getEventColumns());
         if (results.size() > 0)
             return true;
         return false;
@@ -47,12 +40,12 @@ public class Add extends DBAccess {
      * @return n/a
      * 
      */
-    private void CreatePrompt() {
+    public void CreatePrompt() {
         Map<String, List<Object>> eventInfo = new HashMap<>();
         String eventName = "";
         List<Object> values = new ArrayList<>();
-        boolean replaceCurrentEvent = false;
-        for (String key : super.cu.eventColumns) {
+        boolean eventExists = false;
+        for (String key : super.getEventColumns()) {
             char type = key.charAt(key.length() - 1);
             String columnName = key.substring(0, key.indexOf('-'));
             Scanner input = new Scanner(System.in);
@@ -71,8 +64,8 @@ public class Add extends DBAccess {
                         Integer value = input.nextInt();
                         input.nextLine();
                         if (key.equals("endTime-i")) {
-                            while (!valid.validateTime((int) values.get(values.size() - 1), value)) {
-                                msg.Print(msg.GetErrorMessage("lblInvalidTime", null), 'e');
+                            while (!valid.isTimeValid((int) values.get(values.size() - 1), value)) {
+                                output.Print(output.GetErrorMessage("lblInvalidTime", null), 'e');
                                 System.out.print("  endTime: ");
                                 value = input.nextInt();
                                 input.nextLine();
@@ -81,7 +74,7 @@ public class Add extends DBAccess {
                         values.add(value);
                         mismatch = true;
                     } catch (InputMismatchException e) {
-                        super.msg.Print(msg.GetErrorMessage("lblNonNumerical", null), 'e');
+                        super.output.Print(output.GetErrorMessage("lblNonNumerical", null), 'e');
                         System.out.print("\t" + columnName + ": ");
                         input.nextLine();
                     }
@@ -90,36 +83,24 @@ public class Add extends DBAccess {
                 String value = input.nextLine();
                 if (key.equals("name-s")) {
                     if (eventAlreadyExists(value)) {
-                        String newValue = value;
-                        while (newValue.equals(value)) {
-                            msg.Print("> \'" + value
-                                    + "\' already exists. Would you like to replace the pre-existing event with this information? [Y/N]",
-                                    'o');
-                            System.out.print("> ");
-                            newValue = input.nextLine();
-                            if (super.cu.isStringNullOrEmpty(newValue) || newValue.charAt(0) == 'n') {
-                                msg.Print("> Ok. Please choose a different name.", 'o');
-                                System.out.print("\tname: ");
-                                newValue = input.nextLine();
-                            } else {
-                                replaceCurrentEvent = true;
-                                break;
-                            }
-                        }
+                        super.output.Print("> Event already exists. Use <event find -n \'" + value + "\' --edit>",
+                                type);
+                        eventExists = true;
+                        break;
                     }
                     eventName = value;
                 } else if (key.equals("date-s")) {
-                    while (value == null || super.cu.isStringNullOrEmpty(value) || !valid.validateDateFormat(value)) {
-                        msg.Print("> Valid Date Not Provided. Retry? [Y/N]", 'o');
+                    while (value == null || super.commandUtil.isStringNullOrEmpty(value) || !valid.isDateValid(value)) {
+                        output.Print("> Valid Date Not Provided. Retry? [Y/N]", 'o');
                         System.out.print("> ");
                         String option = input.nextLine();
-                        if (super.cu.isStringNullOrEmpty(option) || option.charAt(0) == 'n'
+                        if (super.commandUtil.isStringNullOrEmpty(option) || option.charAt(0) == 'n'
                                 || option.charAt(0) == 'N') {
-                            value = super.cu.GetCurrentLogInTime();
-                            msg.Print("> Date replaced with Today's Date", 'o');
+                            value = super.commandUtil.GetCurrentLogInTime();
+                            output.Print("> Date replaced with Today's Date", 'o');
                             break;
                         } else {
-                            msg.Print("> Enter a valid date (mm-dd-yyyy):", 'o');
+                            output.Print("> Enter a valid date (mm-dd-yyyy):", 'o');
                             System.out.print("\tdate: ");
                             value = input.nextLine();
                         }
@@ -129,7 +110,8 @@ public class Add extends DBAccess {
             }
         }
         eventInfo.put(eventName, values);
-        insertEvent(values, replaceCurrentEvent);
+        if (!eventExists)
+            insertEvent(values);
     }
 
     /**
@@ -143,38 +125,18 @@ public class Add extends DBAccess {
      * @param replaceCurrentEvent flag that determines to replace or insert event
      * @return n/a
      */
-    private void insertEvent(List<Object> values, boolean replaceCurrentEvent) {
+    private void insertEvent(List<Object> values) {
+        DBAccess db = new DBAccess();
         String sql = "SELECT eventID FROM events WHERE name = \"" + values.get(0) + "\";";
-        if (replaceCurrentEvent) {
-            Map<Integer, List<Object>> results = FetchResults(sql, "eventID-i");
-            int eventID = -1;
-            for (Object obj : results.keySet())
-                eventID = (Integer) obj;
-            sql = "UPDATE events SET ";
-            String edits = "";
-            for (int i = 1; i < super.cu.eventColumns.length - 1; i++) {
-                String eCol = super.cu.eventColumns[i];
-                char type = eCol.charAt(eCol.length() - 1);
-                String column = eCol.substring(0, eCol.indexOf('-'));
-                if (type == 'i')
-                    edits += column + " = " + values.get(i) + ",";
-                else
-                    edits += column + " = \"" + values.get(i) + "\",";
-            }
-            edits = edits.substring(0, edits.length() - 1);
-            sql += edits + " WHERE eventID = " + eventID;
-            super.ExecuteQuery(sql, 0);
-        } else {
-            sql = "INSERT INTO events VALUES (";
-            for (Object obj : values) {
-                if (obj instanceof String)
-                    sql += "\"" + obj + "\",";
-                else
-                    sql += obj + ",";
-            }
-
-            sql += "0," + this.jCalID + ");";
-            super.ExecuteQuery(sql, 0);
+        sql = "INSERT INTO events VALUES (";
+        for (Object obj : values) {
+            if (obj instanceof String)
+                sql += "\"" + obj + "\",";
+            else
+                sql += obj + ",";
         }
+        int jCalId = super.getLoggedInUser().getJCalID();
+        sql += "0," + jCalId + ");";
+        db.ExecuteQuery(sql, 0);
     }
 }

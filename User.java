@@ -3,11 +3,20 @@ import java.util.*;
 public class User {
     private String userDataColumns[] = { "name-s", "username-s", "uid-i", "lastLoggedIn-s", "JCal-i" };
     private Map<String, Object> userInfo = new HashMap<>();
+    private boolean loggedIn = false;
     CommandUtil cu = new CommandUtil();
     boolean accountCreated = false;
 
     public User() {
 
+    }
+
+    public boolean getLoggedInStatus() {
+        return this.loggedIn;
+    }
+
+    public void setLoggedInStatus(boolean status) {
+        this.loggedIn = status;
     }
 
     public void SetInfoFromLogin(Map<Integer, List<Object>> userInfo) {
