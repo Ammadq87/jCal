@@ -1,39 +1,30 @@
+
 import java.util.*;
 
 public class Login extends Validation {
-
-    private String command;
 
     public Login(String command) {
         super(command);
     }
 
-    private boolean logout() {
-        if (!super.getLoggedInUser().getLoggedInStatus()) {
-            return false;
-        }
-        super.output.Print(
-                "> " + super.getLoggedInUser().GetUserInfo().get("username-s") + " has successfully logged out",
-                's');
-        super.setLoggedInUser(new User());
-        return true;
-    }
+    /**
+     * ToDo [Display Today's Events]:
+     * - When User logs in, display today's event
+     */
 
     /**
-     * Checks if account exists and whether login was successful. Creates new
-     * account if user specifies
+     * Executes the Add command module. If it's a booking event, it will also book
+     * the events
      * 
-     * ToDo: add option to delete and view account
-     * 
-     * @param n/a
-     * @return if logging in was successful
+     * @return - if the excution was possible
      */
-    public boolean Execute() {
-        String text[] = super.getCommand().split(" ");
+    public boolean execute() {
+        String text[] = CommandUtil.getCommand().split(" ");
         boolean newUser = false;
+        boolean createNewUser = false;
         for (int i = 0; i < text.length; i++) {
             if (text[i].equals("--new")) {
-                CreateNewUser();
+                createNewUser = CreateNewUser();
                 newUser = true;
                 break;
             } else if (text[i].equals("--view")) {
@@ -41,41 +32,55 @@ public class Login extends Validation {
             } else if (text[i].equals("--logout")) {
                 return logout();
             }
-
         }
+
         if (!newUser) {
             boolean result = VerfiyLogin();
             if (result)
-                output.Print(
-                        output.GetSuccessMessage("lblLoginSuccessful",
-                                (String) super.loggedInUser.GetUserInfo().get("username-s")),
+                Messages.printMessage(Messages.getSuccessMessage("lblLoginSuccessful",
+                        (String) Validation.currentUser.getUserInfo().get("Username-s")),
                         's');
             else
-                output.Print(output.GetErrorMessage("lblLoginFailed", null), 'e');
+                Messages.printMessage(Messages.getErrorMessage("lblLoginFailed", null), 'e');
             return result;
         } else {
-            if (super.getLoggedInUser().accountCreated) {
-                output.Print(output.GetSuccessMessage("lblAccountCreated", null), 's');
-                return true;
+            if (createNewUser) {
+                Messages.printMessage(Messages.getSuccessMessage("lblAccountCreated", null), 's');
             }
-            return false;
+            return createNewUser;
         }
     }
 
     private boolean viewAccountInfo() {
-        Map<String, Object> results = super.loggedInUser.GetUserInfo();
+        Map<String, Object> results = super.currentUser.getUserInfo();
         for (String s : results.keySet()) {
             System.out.println(s + ": " + results.get(s));
         }
         return true;
     }
 
+    /**
+     * Check database to see if an account already exists with a specific username
+     * 
+     * @param username - Username to check for
+     * @return if account exists
+     */
     private boolean accountAlreadyExists(String username) {
-        DBAccess db = new DBAccess();
-        String sql = "SELECT username FROM users WHERE username = \'" + username + "\';";
-        Map<Integer, List<Object>> results = db.FetchResults(sql, "username-s");
+        String sql = "SELECT username FROM users WHERE Username = \'" + username + "\';";
+        Map<Integer, List<Object>> results = DBAccess.FetchResults(sql, "Username-s");
         if (results == null || results.size() == 0)
             return false;
+        return true;
+    }
+
+    private boolean logout() {
+        if (super.currentUser == null) {
+            return false;
+        }
+        Messages.printMessage(
+                Messages.getSuccessMessage("lblLogout", (String) super.currentUser.getUserInfo().get("USername-s")),
+                's');
+        super.currentUser = null;
         return true;
     }
 
@@ -85,28 +90,24 @@ public class Login extends Validation {
      * 
      * ToDo: username field is UNIQUE. Add check and verification to prevent an
      * account being created with the same username
-     * 
-     * @param n/a
-     * @return n/a
      */
-    private void CreateNewUser() {
+    private boolean CreateNewUser() {
         Scanner input = new Scanner(System.in);
-        String sql = "INSERT INTO users VALUES ({0})";
+        String sql = "INSERT INTO Users VALUES ({0})";
         String values = "";
         boolean uniqueAccount = true;
-        for (String field : super.getEventColumns()) {
+        for (String field : CommandUtil.getUserDataColumns()) {
 
-            if (field.equals("uid-i") || field.equals("JCal-i")) {
+            if (field.equals("UserId-i")) {
                 values += "0,";
-            } else if (field.equals("lastLoggedIn-s")) {
-                values += "\"" + super.commandUtil.GetCurrentLogInTime() + "\",";
-                System.out.println("values: " + values);
+            } else if (field.equals("LastLoggedIn-t")) {
+                values += "CURRENT_TIMESTAMP,";
             } else {
                 String key = field.substring(0, field.indexOf('-'));
                 System.out.print("\t" + key + ": ");
                 String name = input.nextLine();
-                if (field.equals("username-s") && accountAlreadyExists(name)) {
-                    output.Print("Account Already Exists", 'e');
+                if (field.equals("Username-s") && accountAlreadyExists(name)) {
+                    Messages.printMessage(Messages.getErrorMessage("lblAccountExists", null), 'e');
                     uniqueAccount = false;
                     break;
                 } else {
@@ -115,10 +116,15 @@ public class Login extends Validation {
             }
         }
         if (uniqueAccount) {
-            DBAccess db = new DBAccess();
             sql = sql.replace("{0}", values.substring(0, values.length() - 1));
-            db.ExecuteQuery(sql, 0);
+            int execute = DBAccess.ExecuteQuery(sql, 0);
+            if (execute != 0) {
+                Messages.printMessage(Messages.getErrorMessage("lblSomethingWentWrong", values), 'e');
+                return false;
+            }
+            return true;
         }
+        return false;
     }
 
     /**
@@ -128,19 +134,19 @@ public class Login extends Validation {
      * @return true/false if account exists
      */
     private boolean VerfiyLogin() {
-        DBAccess db = new DBAccess();
-        String username = super.commandUtil.SanitizeArgument(super.commandUtil.GetArgument(super.getCommand(), "-u"));
-        String password = super.commandUtil.SanitizeArgument(super.commandUtil.GetArgument(super.getCommand(), "-p"));
-        String sql = "SELECT DISTINCT * FROM users WHERE username = " + username + " AND password = " + password;
-        Map<Integer, List<Object>> userInfo = db.FetchResults(sql, "name-s", "username-s", "uid-i", "lastLoggedIn-s",
-                "JCal-i");
+        String username = CommandUtil.sanitizedArgument(CommandUtil.getArgument(CommandUtil.getCommand(), "-u"));
+        String password = CommandUtil.sanitizedArgument(CommandUtil.getArgument(CommandUtil.getCommand(), "-p"));
+        String sql = "SELECT DISTINCT * FROM Users WHERE Username = " + username + " AND Password = " + password;
+        Map<Integer, List<Object>> userInfo = DBAccess.FetchResults(sql, "Name-s", "Username-s", "Password-i",
+                "UserId-i",
+                "LastLoggedIn-s");
         if (userInfo == null || userInfo.size() != 1)
             return false;
-        super.getLoggedInUser().SetInfoFromLogin(userInfo);
-        super.getLoggedInUser().setLoggedInStatus(true);
-        sql = "UPDATE users SET lastLoggedIn = \"" + super.commandUtil.GetCurrentLogInTime() + "\" WHERE uid = "
-                + super.loggedInUser.getUID();
-        db.ExecuteQuery(sql, 0);
+        Validation.currentUser = new User();
+        Validation.currentUser.setInfoFromLogin(userInfo);
+        sql = "UPDATE Users SET LastLoggedIn = CURRENT_TIMESTAMP WHERE UserId = "
+                + Validation.currentUser.getUID();
+        DBAccess.ExecuteQuery(sql, 0);
         return true;
     }
 }

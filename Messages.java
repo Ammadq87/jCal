@@ -1,5 +1,6 @@
+
 public class Messages {
-    public String GetErrorMessage(String lbl, String option) {
+    public static String getErrorMessage(String lbl, String option) {
         if (lbl == null || lbl.equals("")) {
             return "> Unknown Error...";
         }
@@ -26,6 +27,8 @@ public class Messages {
                 { "lblLoginFailed", "Username or Password Incorrect" },
                 { "lblAccountExists", "This account already exists" },
                 { "lblNotLoggedIn", "Cannot Access, Not Logged In!" },
+                { "lblNoResults", "No Results Found" },
+                { "lblSomethingWentWrong", "Something went wrong." },
                 { "lblCustom", option }
 
         };
@@ -39,7 +42,7 @@ public class Messages {
         return "> Unknwon Error...";
     }
 
-    public String GetSuccessMessage(String lbl, String option) {
+    public static String getSuccessMessage(String lbl, String option) {
         String labels[][] = {
                 { "lblIntro", "Enter Command. Type -h for help" },
                 { "lblSuccess", "Success" },
@@ -52,6 +55,7 @@ public class Messages {
                 { "lblExit", "Exited application" },
                 { "lblSuccessfulConnect", "Successfully Connected" },
                 { "lblLoginSuccessful", "Logged In as " + option + "!" },
+                { "lblLogout", option + " successfully logged out." },
                 { "lblAccountCreated", "Success: Account Created" },
                 { "lblCustom", option }
         };
@@ -69,7 +73,13 @@ public class Messages {
     }
 
     // e=error, s=success, o=output
-    public void Print(String message, char type) {
+    /**
+     * Prints a coloured messaged based on type.
+     * 
+     * @param message - Message to be printed
+     * @param type    - e=error, s=success, o=output
+     */
+    public static void printMessage(String message, char type) {
         switch (type) {
             case 'e':
                 System.out.print(Color.RED_BOLD_BRIGHT);

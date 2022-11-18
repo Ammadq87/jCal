@@ -3,10 +3,8 @@ import java.time.*;
 // Credit: Arvind Kumar Avinash - Stackoverflow - https://stackoverflow.com/questions/35679827/how-to-display-calendar-in-java
 public class ShowCal {
 
-    private CommandUtil cu = new CommandUtil();
-
     public ShowCal() {
-        String input[] = cu.GetCurrentLogInTime().split("-");
+        String input[] = CommandUtil.getCurrentDate().split("-");
         generateCalendar(Integer.parseInt(input[2]), Integer.parseInt(input[0]));
     }
 

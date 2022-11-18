@@ -1,9 +1,9 @@
+
 import java.util.*;
 import java.time.LocalDate;
 
 public class Event {
     Map<String, Object> eventInfo = new HashMap<>();
-    CommandUtil cu = new CommandUtil();
 
     public Event() {
 
@@ -12,39 +12,39 @@ public class Event {
     public Event(List<Object> eventValues) {
         if (!(eventValues == null || eventValues.size() == 0)) {
             for (int i = 0; i < eventValues.size(); i++) {
-                eventInfo.put(cu.eventColumns[i], eventValues.get(i));
+                eventInfo.put(CommandUtil.getEventColumns()[i], eventValues.get(i));
             }
         }
     }
 
     public String getName() {
-        return (String) this.eventInfo.get("name-s");
+        return (String) this.eventInfo.get("Name-s");
     }
 
     @Override
     public String toString() {
-        return (String) this.eventInfo.get("name-s") + " --> " + getDay() + " ~ " + getTime() + " ~ " + getAttending()
+        return (String) this.eventInfo.get("Name-s") + " --> " + getDay() + " ~ " + getTime() + " ~ " + getAttending()
                 + " ~ " + getPriority();
     }
 
     public String getPriority() {
-        int priority = (Integer) this.eventInfo.get("priority-i") - 1;
+        int priority = (Integer) this.eventInfo.get("Priority-i") - 1;
         String opt[] = { "Low", "Med", "High", "Very High" };
         return priority >= opt.length || priority < 0 ? "Low" : opt[priority];
     }
 
     public String getAttending() {
-        int attend = (Integer) this.eventInfo.get("status-i") - 1;
+        int attend = (Integer) this.eventInfo.get("Status-i") - 1;
         String opt[] = { "Declined", "Attending", "Tentative", "Busy" };
         return attend >= opt.length || attend < 0 ? "Declined" : opt[attend];
     }
 
     public String getTime() {
-        int start = (Integer) this.eventInfo.get("startTime-i");
+        int start = (Integer) this.eventInfo.get("StartTime-i");
         int startH = start / 100;
         int startM = start % 100;
 
-        int end = (Integer) this.eventInfo.get("endTime-i");
+        int end = (Integer) this.eventInfo.get("EndTime-i");
         int endH = end / 100;
         int endM = end % 100;
 
@@ -55,7 +55,7 @@ public class Event {
     }
 
     public String getDay() {
-        String date = (String) this.eventInfo.get("date-s");
+        String date = (String) this.eventInfo.get("Date-s");
         String _date[] = date.split("-");
         LocalDate localDate = LocalDate.of(Integer.parseInt(_date[2]), Integer.parseInt(_date[0]),
                 Integer.parseInt(_date[1]));

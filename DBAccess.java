@@ -1,3 +1,4 @@
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -7,67 +8,96 @@ import java.sql.Statement;
 import java.util.*;
 
 public class DBAccess {
-    private Connection connection = null;
-    private String tables[][] = { { "users", "uid" }, { "events", "eventID" } };
-    private Messages msg = new Messages();
-    private CommandUtil cu = new CommandUtil();
+    private static Connection connection = null;
 
     public DBAccess() {
-        connectToDB();
 
     }
 
-    public void connectToDB() {
+    public static int connectToDB() {
         String connect[] = { "jdbc:mysql://localhost:3306/sys", "root", "Ammadq87" };
         try {
             connection = DriverManager.getConnection(connect[0], connect[1], connect[2]);
+            return 0;
         } catch (SQLException e) {
-            System.out.println("Connection Failed");
             e.printStackTrace();
         }
+        return 1;
     }
 
-    // Create, Update, Delete
-    public void ExecuteQuery(String sql, int CRUD) {
-        try {
-            Statement s = connection.createStatement();
-            s.executeUpdate(sql);
-            msg.Print(msg.GetSuccessMessage("lblSuccess", null), 's');
-        } catch (SQLIntegrityConstraintViolationException e) {
-            msg.Print(msg.GetErrorMessage("lblAccountExists", null), 'e');
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+    /**
+     * Executes SQL Query based on SQL string and returns success message
+     * 
+     * ToDo: Created a sleep thread to verify login
+     * 
+     * @param sql  - SQL Query to be executed
+     * @param CRUD - CRUD operation to be executed
+     * @return returns CRUD if operation was successful
+     */
+    public static int ExecuteQuery(String sql, int CRUD) {
+        if (connectToDB() == 0) {
+            try {
+                Statement s = connection.createStatement();
+                s.executeUpdate(sql);
+                return CRUD;
+
+            } catch (SQLIntegrityConstraintViolationException e) {
+                Messages.printMessage(Messages.getErrorMessage("lblAccountExists", sql), 'e');
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            return -1;
         }
+        return 1;
+
     }
 
-    // Read/Print
-    public Map<Integer, List<Object>> FetchResults(String sql, String... columns) {
-        try {
-            String text[] = sql.split(" ");
-            String primaryKey = "";
-            for (int i = 0; i < text.length; i++) {
-                for (int j = 0; j < this.tables.length; j++) {
-                    if (i != j && text[i].equals(this.tables[j][0])) {
-                        primaryKey = this.tables[j][1];
-                        break;
+    /**
+     * Get a Mapping of the results based on SQL string and required columns
+     * 
+     * @param sql     - SQL Query to be executed (Select Statement)
+     * @param columns - List of required columns
+     * @return a Mapping between the Id and Object from SQL Query
+     */
+    public static Map<Integer, List<Object>> FetchResults(String sql, String... columns) {
+        if (connectToDB() == 0) {
+            try {
+                String text[] = sql.split(" ");
+                String primaryKey = "";
+                for (int i = 0; i < text.length; i++) {
+                    for (int j = 0; j < CommandUtil.getTables().length; j++) {
+                        if (i != j && text[i].equals(CommandUtil.getTables()[j][0])) {
+                            primaryKey = CommandUtil.getTables()[j][1];
+                            break;
+                        }
                     }
                 }
+
+                if (primaryKey.isBlank() || primaryKey.isEmpty())
+                    return null;
+
+                Statement s = connection.createStatement();
+                ResultSet r = s.executeQuery(sql);
+                return FetchResultsHelper(r, primaryKey, columns);
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
             }
-
-            if (primaryKey.isBlank() || primaryKey.isEmpty())
-                return null;
-
-            Statement s = connection.createStatement();
-            ResultSet r = s.executeQuery(sql);
-            return FetchResultsHelper(r, primaryKey, columns);
-
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+            return null;
         }
         return null;
+
     }
 
-    private Map<Integer, List<Object>> FetchResultsHelper(ResultSet r, String primaryKey, String... columns) {
+    /**
+     * Helper method to retrieve mapping between Id and Object
+     * 
+     * @param r          - Select query result set
+     * @param primaryKey - Table to access
+     * @param columns    - Required columns to select data from
+     * @return a Mapping between the Id and Object from SQL Query
+     */
+    private static Map<Integer, List<Object>> FetchResultsHelper(ResultSet r, String primaryKey, String... columns) {
         Map<Integer, List<Object>> results = new HashMap<Integer, List<Object>>();
         try {
 
@@ -88,6 +118,9 @@ public class DBAccess {
                             break;
                         case 's':
                             values.add(r.getString(columnLabel));
+                            break;
+                        case 't': // TimeStamp
+                            values.add(r.getDate(columnLabel));
                             break;
                     }
                 }

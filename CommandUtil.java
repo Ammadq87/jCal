@@ -1,14 +1,93 @@
+
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class CommandUtil {
-    private String flags[] = { "-d", "-t", "-s", "-pr", "-delete", "-edit", "-new", "-u", "-p", "-n" };
-    private String commands[] = { "add", "find", "ls", "login" };
-    String userDataColumns[] = { "name-s", "username-s", "password-s", "uid-i", "lastLoggedIn-s", "JCal-i" };
-    String eventColumns[] = { "name-s", "date-s", "startTime-i", "endTime-i", "status-i", "priority-i", "eventID-i",
-            "jCal-i" };
-    Messages msg = new Messages();
+    private static String command;
+
+    public static void setCommand(String c) {
+        command = c;
+    }
+
+    public static String getCommand() {
+        return command;
+    }
+
+    public static String getCommandType() {
+        if (CommandUtil.isNullOrEmpty(CommandUtil.getCommand()))
+            return null;
+
+        String text[] = CommandUtil.getCommand().split(" ");
+        if (text.length <= 1)
+            return null;
+        return text[1];
+    }
+
+    public static void setCommandType(String commandType) {
+        CommandUtil.commandType = commandType;
+    }
+
+    public static String[] getCommandTypes() {
+        return commandTypes;
+    }
+
+    public static void setCommandTypes(String[] commandTypes) {
+        CommandUtil.commandTypes = commandTypes;
+    }
+
+    private static String commandType;
+    private static String flags[] = { "-d", "-t", "-s", "-pr", "-delete", "-edit", "-new", "-u", "-p", "-n", "--all",
+            "--auto" };
+    private static String commandTypes[] = { "add", "book", "find", "ls", "login" };
+    private static String userDataColumns[] = { "Name-s", "Username-s", "Password-s", "UserId-i", "LastLoggedIn-t" };
+    private static String eventColumns[] = { "Name-s", "Date-s", "StartTime-i", "EndTime-i", "Status-i", "Priority-i",
+            "EventId-i", "IsEventForBooking-i" };
+    private static String tables[][] = { { "Users", "UserId" }, { "Events", "EventId" }, { "Bookings", "BookingId" } };
+
+    public static String[][] getTables() {
+        return tables;
+    }
+
+    public static void setTables(String[][] tables) {
+        CommandUtil.tables = tables;
+    }
+
+    public static String[] getFlags() {
+        return flags;
+    }
+
+    public static void setFlags(String[] flags) {
+        CommandUtil.flags = flags;
+    }
+
+    public static String[] getCommands() {
+        return commandTypes;
+    }
+
+    public static void setCommands(String[] commands) {
+        CommandUtil.commandTypes = commands;
+    }
+
+    public static String[] getUserDataColumns() {
+        return userDataColumns;
+    }
+
+    public static void setUserDataColumns(String[] userDataColumns) {
+        CommandUtil.userDataColumns = userDataColumns;
+    }
+
+    public static String[] getEventColumns() {
+        return eventColumns;
+    }
+
+    public static void setEventColumns(String[] eventColumns) {
+        CommandUtil.eventColumns = eventColumns;
+    }
+
+    public CommandUtil() {
+    }
 
     /**
      * Cleans up command by removing extra spaces
@@ -16,8 +95,8 @@ public class CommandUtil {
      * @param command input command from user
      * @return proper formatted command w/o extra spaces
      */
-    public String SetCommand(String command) {
-        if (isStringNullOrEmpty(command))
+    public static String setFullCommand(String command) {
+        if (isNullOrEmpty(command))
             return null;
         String text[] = command.split(" ");
         String output = "";
@@ -30,19 +109,23 @@ public class CommandUtil {
     }
 
     /**
-     * Supposed to remove quotes from input command
-     * ! Not yet completed
+     * Determines whether input string is null or empty
      * 
-     * @param command argument needed to be sanitized
-     * @returns sanitized command
+     * @param s - input String
+     * @return if string is null or empty
      */
-    public String SanitizeArgument(String command) {
-        if (isStringNullOrEmpty(command))
-            return null;
-        return command.substring(0, command.length());
+    public static boolean isNullOrEmpty(String s) {
+        return (s == null || s.isBlank() || s.isEmpty() || s.equals(" ") || s.equals(""));
     }
 
-    public String GetArgument(String command, String flag) {
+    /**
+     * Gets the argument from the required flag
+     * 
+     * @param command - input command from user
+     * @param flag    - argument to be taken from flag
+     * @return returns the argument
+     */
+    public static String getArgument(String command, String flag) {
         String text[] = command.split(" ");
         if (text == null || text.length == 0)
             return null;
@@ -63,150 +146,29 @@ public class CommandUtil {
                 }
             }
         }
-
         return null;
     }
 
-    public boolean isStringNullOrEmpty(String s) {
-        return (s == null || s.isBlank() || s.isEmpty() || s.equals(" ") || s.equals(""));
+    /**
+     * Removes quotes from input command
+     * 
+     * @param command argument needed to be sanitized
+     * @returns sanitized command
+     */
+    public static String sanitizedArgument(String command) {
+        if (isNullOrEmpty(command))
+            return null;
+        return command.substring(0, command.length());
     }
 
-    public String GetCurrentLogInTime() {
+    public static Timestamp getCurrentTimestamp() {
+        return new Timestamp(new Date().getTime());
+    }
+
+    public static String getCurrentDate() {
         LocalDateTime myDateObj = LocalDateTime.now();
         DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("MM-dd-yyyy");
         return myDateObj.format(myFormatObj);
     }
 
-    // public void Prompt() {
-    // Map<String, List<Object>> eventInfo = new HashMap<>();
-    // String eventName = "";
-    // List<Object> values = new ArrayList<>();
-    // boolean replaceCurrentEvent = false;
-    // for (String key : this.eventColumns) {
-    // char type = key.charAt(key.length() - 1);
-    // String columnName = key.substring(0, key.indexOf('-'));
-    // Scanner input = new Scanner(System.in);
-    // if (key.equals("eventID-i") || key.equals("jCal-i"))
-    // continue;
-    // if (key.equals("status-i"))
-    // columnName += " [1:Declined, 2:Attending, 3:Tentative, 4:Busy]";
-    // if (key.equals("priority-i"))
-    // columnName += " [1:Low, 2:Med, 3:High, 4:Very High]";
-    // System.out.print("\t" + columnName + ": ");
-    // Validation valid = new Validation(null);
-    // if (type == 'i') {
-    // boolean mismatch = false;
-    // while (!mismatch) {
-    // try {
-    // Integer value = input.nextInt();
-    // input.nextLine();
-    // if (key.equals("endTime-i")) {
-    // while (!valid.validateTime((int) values.get(values.size() - 1), value)) {
-    // msg.Print(msg.GetErrorMessage("lblInvalidTime", null), 'e');
-    // System.out.print(" endTime: ");
-    // value = input.nextInt();
-    // input.nextLine();
-    // }
-    // }
-    // values.add(value);
-    // mismatch = true;
-    // } catch (InputMismatchException e) {
-    // msg.Print(msg.GetErrorMessage("lblNonNumerical", null), 'e');
-    // System.out.print("\t" + columnName + ": ");
-    // input.nextLine();
-    // }
-    // }
-    // } else {
-    // String value = input.nextLine();
-    // if (key.equals("name-s")) {
-    // if (eventAlreadyExists(value)) {
-    // String newValue = value;
-    // while (newValue.equals(value)) {
-    // msg.Print("> \'" + value
-    // + "\' already exists. Would you like to replace the pre-existing event with
-    // this information? [Y/N]",
-    // 'o');
-    // System.out.print("> ");
-    // newValue = input.nextLine();
-    // if (isStringNullOrEmpty(newValue) || newValue.charAt(0) == 'n') {
-    // msg.Print("> Ok. Please choose a different name.", 'o');
-    // System.out.print("\tname: ");
-    // newValue = input.nextLine();
-    // } else {
-    // replaceCurrentEvent = true;
-    // break;
-    // }
-    // }
-    // }
-    // eventName = value;
-    // } else if (key.equals("date-s")) {
-    // while (value == null || isStringNullOrEmpty(value) ||
-    // !valid.validateDateFormat(value)) {
-    // msg.Print("> Valid Date Not Provided. Retry? [Y/N]", 'o');
-    // System.out.print("> ");
-    // String option = input.nextLine();
-    // if (isStringNullOrEmpty(option) || option.charAt(0) == 'n'
-    // || option.charAt(0) == 'N') {
-    // value = GetCurrentLogInTime();
-    // msg.Print("> Date replaced with Today's Date", 'o');
-    // break;
-    // } else {
-    // msg.Print("> Enter a valid date (mm-dd-yyyy):", 'o');
-    // System.out.print("\tdate: ");
-    // value = input.nextLine();
-    // }
-    // }
-    // }
-    // values.add(value);
-    // }
-    // }
-    // eventInfo.put(eventName, values);
-    // insertEvent(values, replaceCurrentEvent);
-    // }
-
-    // private boolean eventAlreadyExists(String eventName) {
-    // String sql = "SELECT * FROM events WHERE name = \"" + eventName + "\";"; //
-    // Select COUNT(name)
-    // DBAccess db = new DBAccess();
-    // Map<Integer, List<Object>> results = db.FetchResults(sql, this.eventColumns);
-    // if (results.size() > 0)
-    // return true;
-    // return false;
-    // }
-
-    // private void insertEvent(List<Object> values, boolean replaceCurrentEvent) {
-    // String sql = "SELECT eventID FROM events WHERE name = \"" + values.get(0) +
-    // "\";";
-    // if (replaceCurrentEvent) {
-    // Map<Integer, List<Object>> results = FetchResults(sql, "eventID-i");
-    // int eventID = -1;
-    // for (Object obj : results.keySet())
-    // eventID = (Integer) obj;
-    // sql = "UPDATE events SET ";
-    // String edits = "";
-    // for (int i = 1; i < super.cu.eventColumns.length - 1; i++) {
-    // String eCol = super.cu.eventColumns[i];
-    // char type = eCol.charAt(eCol.length() - 1);
-    // String column = eCol.substring(0, eCol.indexOf('-'));
-    // if (type == 'i')
-    // edits += column + " = " + values.get(i) + ",";
-    // else
-    // edits += column + " = \"" + values.get(i) + "\",";
-    // }
-    // edits = edits.substring(0, edits.length() - 1);
-    // sql += edits + " WHERE eventID = " + eventID;
-    // super.ExecuteQuery(sql, 0);
-    // } else {
-    // sql = "INSERT INTO events VALUES (";
-    // for (Object obj : values) {
-    // if (obj instanceof String)
-    // sql += "\"" + obj + "\",";
-    // else
-    // sql += obj + ",";
-    // }
-
-    // sql += "0," + this.jCalID + ");";
-    // super.ExecuteQuery(sql, 0);
-    // }
-    // }
 }
